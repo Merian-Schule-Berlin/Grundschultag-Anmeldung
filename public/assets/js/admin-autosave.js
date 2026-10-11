@@ -251,10 +251,6 @@
         boot();
     }
 
-    document.addEventListener('admin-theme-change', function () {
-        window.setTimeout(bindRichEditors, 80);
-    });
-
     // TinyMCE may init slightly later
     window.setTimeout(bindRichEditors, 400);
     window.setTimeout(bindRichEditors, 1200);

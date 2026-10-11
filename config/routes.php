@@ -31,6 +31,7 @@ return static function (App $app): void {
     $app->get('/datenschutz', [PublicController::class, 'datenschutz']);
     $app->get('/woher', [PublicController::class, 'about']);
     $app->get('/robots.txt', [PublicController::class, 'robotsTxt']);
+    $app->get('/sitemap.xml', [PublicController::class, 'sitemapXml']);
 
     $app->group('/administrator', function (RouteCollectorProxy $group): void {
         $group->get('/login', [AuthController::class, 'loginForm']);

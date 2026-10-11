@@ -1,5 +1,5 @@
 {% extends 'layouts/base.twig' %}
-{% block title %}Willkommen · {{ app_name }}{% endblock %}
+{% block title %}{{ app_name }}{% if site_subtitle %} · {{ site_subtitle }}{% endif %}{% endblock %}
 {% block body_class %}page-home{% endblock %}
 {% block content %}
 <section class="card app-card overflow-hidden">

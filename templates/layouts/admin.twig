@@ -271,10 +271,16 @@
                 localStorage.setItem(themeKey, next);
             } catch (e) {}
             syncThemeUi(next);
-            document.documentElement.dispatchEvent(new CustomEvent('admin-theme-change', {
-                bubbles: true,
-                detail: { theme: next }
-            }));
+
+            // TinyMCE-Skin greift nur beim Init → Seite neu laden
+            if (typeof tinymce !== 'undefined') {
+                tinymce.editors.forEach(function (editor) {
+                    try {
+                        editor.save();
+                    } catch (e) {}
+                });
+            }
+            window.location.reload();
         }
 
         if (collapseBtn) {

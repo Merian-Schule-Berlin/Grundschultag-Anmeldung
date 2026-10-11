@@ -53,7 +53,7 @@
                     <a class="settings-overview-card" href="/administrator/einstellungen?tab=indexierung">
                         <i class="bi bi-search" aria-hidden="true"></i>
                         <span class="settings-overview-title">Indexierung</span>
-                        <span class="settings-overview-text">Google &amp; Suchmaschinen erlauben oder sperren</span>
+                        <span class="settings-overview-text">Meta-Beschreibung, Google &amp; Sitemap</span>
                     </a>
                     <a class="settings-overview-card" href="/administrator/einstellungen?tab=bot-schutz">
                         <i class="bi bi-shield-lock" aria-hidden="true"></i>
@@ -77,10 +77,11 @@
             <div class="settings-panel{% if tab == 'indexierung' %} is-active{% endif %}" data-panel="indexierung">
                 <h2 class="settings-panel-title">
                     Indexierung
-                    {% include 'partials/settings_info.twig' with { text: 'Steuert, ob Suchmaschinen wie Google die öffentlichen Seiten erfassen dürfen.' } %}
+                    {% include 'partials/settings_info.twig' with { text: 'Steuert Suchmaschinen-Erfassung, Meta-Beschreibung und Sitemap der öffentlichen Seiten.' } %}
                 </h2>
 
                 {% set indexing_on = settings.google_indexing|default('0') == '1' %}
+                {% set meta_desc = settings.meta_description|default('') %}
                 <form method="post" action="/administrator/einstellungen/indexierung" data-autosave>
                     {{ csrf.field()|raw }}
                     <div class="settings-block">
@@ -89,7 +90,7 @@
                                 <div class="settings-option-copy">
                                     <span class="settings-option-title">
                                         Google-Indexierung
-                                        {% include 'partials/settings_info.twig' with { text: 'Erlaubt Suchmaschinen, die öffentlichen Seiten zu indexieren. Aus = noindex und robots.txt sperrt die Seite; Admin-Bereich bleibt ausgeschlossen.' } %}
+                                        {% include 'partials/settings_info.twig' with { text: 'Erlaubt Suchmaschinen, die öffentlichen Seiten zu indexieren. Aus = noindex und robots.txt sperrt die Seite; Admin-Bereich bleibt ausgeschlossen. Bei aktivierter Indexierung wird eine Sitemap unter /sitemap.xml bereitgestellt.' } %}
                                     </span>
                                 </div>
                                 <div class="form-check form-switch m-0 d-flex align-items-center gap-2" data-autosave-status>
@@ -99,6 +100,25 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="settings-block mt-3">
+                        <div class="settings-block-heading">
+                            <h3 class="settings-block-title mb-0">
+                                Metadaten
+                                {% include 'partials/settings_info.twig' with { text: 'Titel kommt aus dem Seitentitel unter Darstellung. Die Meta-Beschreibung erscheint in Suchergebnissen und Social-Previews.' } %}
+                            </h3>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="meta_description">
+                                Meta-Beschreibung
+                                {% include 'partials/settings_info.twig' with { text: 'Kurzer Text für Google & Co. (empfohlen 120–160 Zeichen, max. 300). Ohne Eintrag wird der Untertitel genutzt, falls vorhanden.' } %}
+                            </label>
+                            <textarea class="form-control" name="meta_description" id="meta_description" rows="3" maxlength="300"
+                                      placeholder="z. B. Anmeldung zum Grundschultag der Merian-Schule Berlin – Fachbereiche wählen und verbindlich anmelden.">{{ meta_desc }}</textarea>
+                            <p class="form-text mb-0" id="meta_description_counter" aria-live="polite"></p>
+                        </div>
+                    </div>
+
                     <div class="mt-3">
                         <button type="submit" class="btn btn-primary">Speichern</button>
                     </div>
@@ -781,6 +801,19 @@
     bindOptionSwitch('homepage_button_enabled');
     bindOptionSwitch('public_theme_toggle');
     bindOptionSwitch('google_indexing');
+
+    var metaDesc = document.getElementById('meta_description');
+    var metaCounter = document.getElementById('meta_description_counter');
+    function syncMetaCounter() {
+        if (!metaDesc || !metaCounter) return;
+        var max = 300;
+        var left = max - (metaDesc.value || '').length;
+        metaCounter.textContent = left + ' Zeichen übrig von ' + max + ' Zeichen';
+    }
+    if (metaDesc) {
+        metaDesc.addEventListener('input', syncMetaCounter);
+        syncMetaCounter();
+    }
 
     var botRadios = document.querySelectorAll('input[name="bot_protection_provider"]');
     var botKeys = document.getElementById('bot-keys-block');

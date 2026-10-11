@@ -3,10 +3,32 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if google_indexing %}
-    <meta name="robots" content="index, follow">
-    {% else %}
-    <meta name="robots" content="noindex, nofollow">
+    {% set page_title %}{% block title %}{{ app_name }}{% if site_subtitle %} · {{ site_subtitle }}{% endif %}{% endblock %}{% endset %}
+    {% set page_description %}{% block meta_description %}{{ meta_description|default(site_subtitle, true) }}{% endblock %}{% endset %}
+    {% set page_description = page_description|striptags|trim %}
+    <meta name="robots" content="{% block robots %}{% if google_indexing %}index, follow{% else %}noindex, nofollow{% endif %}{% endblock %}">
+    <title>{{ page_title|striptags|trim }}</title>
+    {% if page_description %}
+    <meta name="description" content="{{ page_description|e('html_attr') }}">
+    {% endif %}
+    {% if app_url %}
+    <link rel="canonical" href="{{ app_url }}{{ request_path|default('/') }}">
+    <meta property="og:url" content="{{ app_url }}{{ request_path|default('/') }}">
+    {% endif %}
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="de_DE">
+    <meta property="og:site_name" content="{{ app_name|e('html_attr') }}">
+    <meta property="og:title" content="{{ page_title|striptags|trim|e('html_attr') }}">
+    {% if page_description %}
+    <meta property="og:description" content="{{ page_description|e('html_attr') }}">
+    {% endif %}
+    {% if site_logo and app_url %}
+    <meta property="og:image" content="{{ app_url }}/uploads/{{ site_logo }}">
+    {% endif %}
+    <meta name="twitter:card" content="summary{% if site_logo and app_url %}_large_image{% endif %}">
+    <meta name="twitter:title" content="{{ page_title|striptags|trim|e('html_attr') }}">
+    {% if page_description %}
+    <meta name="twitter:description" content="{{ page_description|e('html_attr') }}">
     {% endif %}
     {% if public_theme_toggle %}
     <script>
@@ -20,7 +42,6 @@
     })();
     </script>
     {% endif %}
-    <title>{% block title %}{{ app_name }}{% endblock %}</title>
     {% if site_logo %}
         <link rel="icon" href="/uploads/{{ site_logo }}" type="image/png">
         <link rel="apple-touch-icon" href="/uploads/{{ site_logo }}">

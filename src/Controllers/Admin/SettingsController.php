@@ -206,17 +206,32 @@ final class SettingsController
         }
 
         $data = (array) $request->getParsedBody();
+        $ajax = $this->isAjax($request);
         $enabled = !empty($data['google_indexing']);
+        $metaDescription = trim((string) ($data['meta_description'] ?? ''));
+        if (mb_strlen($metaDescription) > 300) {
+            $error = 'Die Meta-Beschreibung darf höchstens 300 Zeichen lang sein.';
+            if ($ajax) {
+                return $this->json($response->withStatus(400), ['ok' => false, 'error' => $error]);
+            }
+            $_SESSION['flash_error'] = $error;
+            return $response
+                ->withHeader('Location', '/administrator/einstellungen?tab=indexierung')
+                ->withStatus(302);
+        }
+
         $this->settings->setMany([
             'google_indexing' => $enabled ? '1' : '0',
+            'meta_description' => $metaDescription,
         ]);
         $this->view->getEnvironment()->addGlobal('google_indexing', $enabled);
+        $this->view->getEnvironment()->addGlobal('meta_description', $metaDescription);
 
         $message = $enabled
-            ? 'Google-Indexierung ist aktiv. Suchmaschinen dürfen die öffentlichen Seiten erfassen.'
-            : 'Google-Indexierung ist deaktiviert. Suchmaschinen werden angewiesen, die Seite nicht zu indexieren.';
+            ? 'Indexierung gespeichert. Suchmaschinen dürfen die öffentlichen Seiten erfassen.'
+            : 'Indexierung gespeichert. Suchmaschinen werden angewiesen, die Seite nicht zu indexieren.';
 
-        if ($this->isAjax($request)) {
+        if ($ajax) {
             return $this->json($response, ['ok' => true, 'message' => $message]);
         }
 

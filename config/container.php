@@ -78,6 +78,14 @@ return [
         $homepageButtonLabel = 'Zur Homepage';
         $publicThemeToggle = false;
         $googleIndexing = false;
+        $metaDescription = '';
+        $appUrl = rtrim((string) ($c->get('settings')['app_url'] ?? ''), '/');
+        $requestPath = '/';
+        $rawUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $parsedPath = parse_url($rawUri, PHP_URL_PATH);
+        if (is_string($parsedPath) && $parsedPath !== '') {
+            $requestPath = $parsedPath;
+        }
         try {
             $db = $c->get('settings')['db'] ?? [];
             if (($db['name'] ?? '') !== '' && is_file($c->get('root_path') . '/.env')) {
@@ -103,6 +111,7 @@ return [
                 }
                 $publicThemeToggle = $settingsService->publicThemeToggleEnabled();
                 $googleIndexing = $settingsService->googleIndexingEnabled();
+                $metaDescription = $settingsService->metaDescription();
             }
         } catch (Throwable) {
             $siteLogo = '';
@@ -115,6 +124,7 @@ return [
             $homepageButtonLabel = 'Zur Homepage';
             $publicThemeToggle = false;
             $googleIndexing = false;
+            $metaDescription = '';
         }
         $assetVersion = '1';
         $versionFile = $c->get('root_path') . '/VERSION';
@@ -136,6 +146,9 @@ return [
         $twig->getEnvironment()->addGlobal('homepage_button_label', $homepageButtonLabel);
         $twig->getEnvironment()->addGlobal('public_theme_toggle', $publicThemeToggle);
         $twig->getEnvironment()->addGlobal('google_indexing', $googleIndexing);
+        $twig->getEnvironment()->addGlobal('meta_description', $metaDescription);
+        $twig->getEnvironment()->addGlobal('app_url', $appUrl);
+        $twig->getEnvironment()->addGlobal('request_path', $requestPath);
         $twig->getEnvironment()->addGlobal(
             'impressum_external',
             $impressumHref !== '' && preg_match('#^https?://#i', $impressumHref) === 1

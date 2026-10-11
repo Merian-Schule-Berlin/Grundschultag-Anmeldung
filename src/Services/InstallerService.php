@@ -85,6 +85,7 @@ final class InstallerService
             'homepage_button_label' => 'Zur Homepage',
             'public_theme_toggle' => '0',
             'google_indexing' => '0',
+            'meta_description' => '',
             'bot_protection_provider' => SettingsService::BOT_OFF,
             'bot_protection_site_key' => '',
             'bot_protection_secret_key' => '',

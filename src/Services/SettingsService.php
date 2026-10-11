@@ -189,6 +189,11 @@ final class SettingsService
         return $this->isTruthy('google_indexing');
     }
 
+    public function metaDescription(): string
+    {
+        return trim($this->get('meta_description'));
+    }
+
     public function botProtectionProvider(): string
     {
         $value = trim($this->get('bot_protection_provider', self::BOT_OFF));

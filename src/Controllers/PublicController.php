@@ -315,7 +315,11 @@ final class PublicController
     public function robotsTxt(Request $request, Response $response): Response
     {
         if ($this->settings->googleIndexingEnabled()) {
-            $body = "User-agent: *\nAllow: /\nDisallow: /administrator\n";
+            $body = "User-agent: *\nAllow: /\nDisallow: /administrator\nDisallow: /danke/\nDisallow: /stornieren/\nDisallow: /setup\n";
+            $baseUrl = $this->publicBaseUrl();
+            if ($baseUrl !== '') {
+                $body .= 'Sitemap: ' . $baseUrl . "/sitemap.xml\n";
+            }
         } else {
             $body = "User-agent: *\nDisallow: /\n";
         }
@@ -324,6 +328,73 @@ final class PublicController
         return $response
             ->withHeader('Content-Type', 'text/plain; charset=utf-8')
             ->withHeader('Cache-Control', 'public, max-age=3600');
+    }
+
+    public function sitemapXml(Request $request, Response $response): Response
+    {
+        if (!$this->settings->googleIndexingEnabled()) {
+            $response->getBody()->write('');
+            return $response
+                ->withStatus(404)
+                ->withHeader('Content-Type', 'text/plain; charset=utf-8');
+        }
+
+        $baseUrl = $this->publicBaseUrl();
+        if ($baseUrl === '') {
+            $response->getBody()->write('APP_URL ist nicht konfiguriert.');
+            return $response
+                ->withStatus(503)
+                ->withHeader('Content-Type', 'text/plain; charset=utf-8');
+        }
+
+        $paths = ['/', '/anmelden'];
+        if (trim($this->settings->get('impressum_text')) !== '') {
+            $paths[] = '/impressum';
+        }
+        if (trim($this->settings->get('datenschutz_text')) !== '') {
+            $paths[] = '/datenschutz';
+        }
+        if (trim($this->settings->get('about_text')) !== '') {
+            $paths[] = '/woher';
+        }
+
+        foreach ($this->fachbereiche->all(true) as $fb) {
+            $id = (int) ($fb['id'] ?? 0);
+            if ($id > 0) {
+                $paths[] = '/anmelden/' . $id;
+            }
+        }
+
+        $xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'];
+        foreach ($paths as $path) {
+            $loc = htmlspecialchars($baseUrl . $path, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            $priority = $path === '/' ? '1.0' : ($path === '/anmelden' ? '0.9' : '0.7');
+            $xml[] = '  <url>';
+            $xml[] = '    <loc>' . $loc . '</loc>';
+            $xml[] = '    <changefreq>weekly</changefreq>';
+            $xml[] = '    <priority>' . $priority . '</priority>';
+            $xml[] = '  </url>';
+        }
+        $xml[] = '</urlset>';
+
+        $response->getBody()->write(implode("\n", $xml) . "\n");
+        return $response
+            ->withHeader('Content-Type', 'application/xml; charset=utf-8')
+            ->withHeader('Cache-Control', 'public, max-age=3600');
+    }
+
+    private function publicBaseUrl(): string
+    {
+        $configured = rtrim((string) ($_ENV['APP_URL'] ?? ''), '/');
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['SERVER_PORT'] ?? null) == 443);
+        $scheme = $https ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        return $host !== '' ? $scheme . '://' . $host : '';
     }
 
     private function clientIp(Request $request): ?string
