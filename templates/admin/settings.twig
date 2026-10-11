@@ -25,7 +25,7 @@
                     <a class="settings-overview-card" href="/administrator/einstellungen?tab=email">
                         <i class="bi bi-envelope" aria-hidden="true"></i>
                         <span class="settings-overview-title">E-Mail</span>
-                        <span class="settings-overview-text">Bestätigungsmail und Absender</span>
+                        <span class="settings-overview-text">Bestätigung, Storno und Absender</span>
                     </a>
                     <a class="settings-overview-card" href="/administrator/einstellungen?tab=rechtliches">
                         <i class="bi bi-shield-check" aria-hidden="true"></i>
@@ -462,7 +462,7 @@
 
                     <h2 class="settings-panel-title">
                         E-Mail
-                        {% include 'partials/settings_info.twig' with { text: 'Absender, Betreff und Text für Bestätigungsmails. Platzhalter werden beim Versand ersetzt.' } %}
+                        {% include 'partials/settings_info.twig' with { text: 'Absender sowie Betreff und Text für Bestätigungs- und Storno-Mails. Platzhalter werden beim Versand ersetzt.' } %}
                     </h2>
 
                     <div class="settings-block">
@@ -474,6 +474,10 @@
                             <label class="form-label" for="mail_from_name">Absender-Name</label>
                             <input class="form-control" type="text" name="mail_from_name" id="mail_from_name" value="{{ settings.mail_from_name|default('') }}">
                         </div>
+                    </div>
+
+                    <div class="settings-block mt-4">
+                        <h3 class="h6 mb-3">Bestätigungsmail</h3>
                         <div class="mb-3">
                             <label class="form-label" for="mail_subject">
                                 Betreff
@@ -487,6 +491,24 @@
                                 {% include 'partials/settings_info.twig' with { text: 'Platzhalter: {logo}, {name}, {email}, {fachbereich}, {schiene}, {cancel_url}, {thanks_url}, {from_name}. {logo} aus Darstellung; für Links z. B. {cancel_url} einfügen.' } %}
                             </label>
                             <textarea class="form-control rich-editor" name="mail_body" id="mail_body" rows="14">{{ settings.mail_body|default(mail_body_default, true) }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="settings-block mt-4">
+                        <h3 class="h6 mb-3">Storno-Mail</h3>
+                        <div class="mb-3">
+                            <label class="form-label" for="mail_cancel_subject">
+                                Betreff
+                                {% include 'partials/settings_info.twig' with { text: 'Platzhalter möglich, z. B. {name}, {fachbereich}.' } %}
+                            </label>
+                            <input class="form-control" type="text" name="mail_cancel_subject" id="mail_cancel_subject" value="{{ settings.mail_cancel_subject|default('') }}">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="mail_cancel_body">
+                                Mail-Text
+                                {% include 'partials/settings_info.twig' with { text: 'Wird nach einer Stornierung an die Teilnehmer-Adresse gesendet. Platzhalter: {logo}, {name}, {email}, {fachbereich}, {schiene}, {thanks_url}, {from_name}.' } %}
+                            </label>
+                            <textarea class="form-control rich-editor" name="mail_cancel_body" id="mail_cancel_body" rows="12">{{ settings.mail_cancel_body|default(mail_cancel_body_default, true) }}</textarea>
                         </div>
                     </div>
                     <div class="mt-3">

@@ -83,6 +83,8 @@ final class SettingsController
                     'mail_from_name' => trim((string) ($data['mail_from_name'] ?? '')),
                     'mail_subject' => trim((string) ($data['mail_subject'] ?? '')),
                     'mail_body' => $this->html->sanitize((string) ($data['mail_body'] ?? '')),
+                    'mail_cancel_subject' => trim((string) ($data['mail_cancel_subject'] ?? '')),
+                    'mail_cancel_body' => $this->html->sanitize((string) ($data['mail_cancel_body'] ?? '')),
                 ]);
             }
             if (in_array($section, ['rechtliches', 'all'], true)) {
@@ -682,10 +684,17 @@ final class SettingsController
         if (trim((string) ($settings['mail_body'] ?? '')) === '') {
             $settings['mail_body'] = AnmeldungService::defaultMailBody();
         }
+        if (trim((string) ($settings['mail_cancel_subject'] ?? '')) === '') {
+            $settings['mail_cancel_subject'] = AnmeldungService::defaultCancelMailSubject();
+        }
+        if (trim((string) ($settings['mail_cancel_body'] ?? '')) === '') {
+            $settings['mail_cancel_body'] = AnmeldungService::defaultCancelMailBody();
+        }
 
         return $this->view->render($response, 'admin/settings.twig', [
             'settings' => $settings,
             'mail_body_default' => AnmeldungService::defaultMailBody(),
+            'mail_cancel_body_default' => AnmeldungService::defaultCancelMailBody(),
             'users' => $this->auth->listUsers(),
             'fachbereiche' => $this->fachbereiche->all(),
             'anmeldungen_total' => $this->anmeldungen->countAll(),

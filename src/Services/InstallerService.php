@@ -74,6 +74,8 @@ final class InstallerService
             'mail_from_name' => $mail['from_name'],
             'mail_subject' => $mail['subject'],
             'mail_body' => AnmeldungService::defaultMailBody(),
+            'mail_cancel_subject' => AnmeldungService::defaultCancelMailSubject(),
+            'mail_cancel_body' => AnmeldungService::defaultCancelMailBody(),
             'impressum_url' => '',
             'impressum_text' => '',
             'datenschutz_url' => '',

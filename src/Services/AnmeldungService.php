@@ -122,6 +122,9 @@ final class AnmeldungService
             'UPDATE anmeldungen SET status = \'storniert\', cancelled_at = NOW() WHERE token = :token AND status = \'aktiv\''
         );
         $stmt->execute(['token' => $token]);
+        if ($stmt->rowCount() > 0) {
+            $this->sendCancelMail($anmeldung);
+        }
     }
 
     public function countActive(?int $fachbereichId = null): int
@@ -223,6 +226,37 @@ final class AnmeldungService
     /** @param array<string, mixed> $anmeldung */
     private function sendConfirmationMail(array $anmeldung): void
     {
+        $this->sendTemplatedMail(
+            $anmeldung,
+            'mail_subject',
+            (string) ($this->appSettings['mail']['subject'] ?? 'Ihre Anmeldung zum Grundschultag'),
+            'mail_body',
+            self::defaultMailBody()
+        );
+    }
+
+    /** @param array<string, mixed> $anmeldung */
+    private function sendCancelMail(array $anmeldung): void
+    {
+        $this->sendTemplatedMail(
+            $anmeldung,
+            'mail_cancel_subject',
+            'Ihre Stornierung zum Grundschultag',
+            'mail_cancel_body',
+            self::defaultCancelMailBody()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $anmeldung
+     */
+    private function sendTemplatedMail(
+        array $anmeldung,
+        string $subjectKey,
+        string $subjectFallback,
+        string $bodyKey,
+        string $bodyFallback
+    ): void {
         $baseUrl = rtrim((string) ($this->appSettings['app_url'] ?? ''), '/');
         if ($baseUrl === '') {
             $baseUrl = $this->guessBaseUrl();
@@ -253,13 +287,10 @@ final class AnmeldungService
         // Nach Sanitize als HTML ersetzen, damit <img> nicht herausgefiltert wird.
         $htmlPlaceholders['{logo}'] = $this->logoImgHtml($baseUrl, $fromName);
 
-        $subjectTemplate = $this->settings->get(
-            'mail_subject',
-            (string) ($this->appSettings['mail']['subject'] ?? 'Ihre Anmeldung zum Grundschultag')
-        );
-        $bodyTemplate = trim($this->settings->get('mail_body'));
+        $subjectTemplate = $this->settings->get($subjectKey, $subjectFallback);
+        $bodyTemplate = trim($this->settings->get($bodyKey));
         if ($bodyTemplate === '') {
-            $bodyTemplate = self::defaultMailBody();
+            $bodyTemplate = $bodyFallback;
         }
 
         $subject = strtr($subjectTemplate, $rawPlaceholders);
@@ -285,6 +316,23 @@ final class AnmeldungService
             . '<p>Mit freundlichen Grüßen<br>Das Team der {from_name}</p>'
             . '<p>Webansicht Ihrer Anmeldung:<br>'
             . '<a href="{thanks_url}">{thanks_url}</a></p>';
+    }
+
+    public static function defaultCancelMailBody(): string
+    {
+        return '<p>{logo}</p>'
+            . '<p>Hallo {name},</p>'
+            . '<p>Ihre Anmeldung wurde storniert.</p>'
+            . '<p><strong>Stornierte Anmeldung:</strong><br>'
+            . 'Fachbereich: {fachbereich}<br>'
+            . 'Schiene: {schiene}<br>'
+            . 'Name: {name}</p>'
+            . '<p>Mit freundlichen Grüßen<br>Das Team der {from_name}</p>';
+    }
+
+    public static function defaultCancelMailSubject(): string
+    {
+        return 'Ihre Stornierung zum Grundschultag';
     }
 
     private function logoImgHtml(string $baseUrl, string $alt): string
