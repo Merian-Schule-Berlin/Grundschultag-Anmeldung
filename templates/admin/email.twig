@@ -49,23 +49,47 @@
                 </div>
 
                 <div class="mb-3">
-                    <span class="form-label d-block">Platzhalter</span>
-                    <div class="email-placeholders" role="group" aria-label="Platzhalter einfügen">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{name}">{name}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{email}">{email}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{fachbereich}">{fachbereich}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{schiene}">{schiene}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{from_name}">{from_name}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{logo}">{logo}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{cancel_url}">{cancel_url}</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{thanks_url}">{thanks_url}</button>
-                    </div>
-                    <div class="form-text mt-1">Klicken fügt den Platzhalter an der Cursor-Position ein (Betreff oder Text).</div>
+                    <label class="form-label" for="body">Nachricht</label>
+                    <textarea class="form-control rich-editor" name="body" id="body" rows="12">{{ old.body|default('') }}</textarea>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label" for="body">Nachricht</label>
-                    <textarea class="form-control rich-editor" name="body" id="body" rows="12">{{ old.body|default('') }}</textarea>
+                    <span class="form-label d-block">Platzhalter</span>
+                    <div class="form-text mb-2">Klicken fügt den Platzhalter an der Cursor-Position ein (Betreff oder Text).</div>
+                    <ul class="email-placeholders" role="group" aria-label="Platzhalter einfügen">
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{name}">{name}</button>
+                            <span class="email-placeholder-desc">Name der angemeldeten Person</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{email}">{email}</button>
+                            <span class="email-placeholder-desc">E-Mail-Adresse der angemeldeten Person</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{fachbereich}">{fachbereich}</button>
+                            <span class="email-placeholder-desc">Name des gebuchten Fachbereichs</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{schiene}">{schiene}</button>
+                            <span class="email-placeholder-desc">Name der gewählten Schiene</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{from_name}">{from_name}</button>
+                            <span class="email-placeholder-desc">Absender-Name aus den Einstellungen</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{logo}">{logo}</button>
+                            <span class="email-placeholder-desc">Logo als Bild (nur im Nachrichtentext)</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{cancel_url}">{cancel_url}</button>
+                            <span class="email-placeholder-desc">Persönlicher Link zum Stornieren</span>
+                        </li>
+                        <li class="email-placeholder-item">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-placeholder="{thanks_url}">{thanks_url}</button>
+                            <span class="email-placeholder-desc">Persönlicher Link zur Bestätigungsseite</span>
+                        </li>
+                    </ul>
                 </div>
 
                 <button type="submit" class="btn btn-primary"

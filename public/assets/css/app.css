@@ -877,13 +877,30 @@ body > .site-footer {
 }
 
 .email-placeholders {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.email-placeholder-item {
+    display: flex;
+    align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.5rem 0.75rem;
 }
 
 .email-placeholders .btn {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    flex-shrink: 0;
+}
+
+.email-placeholder-desc {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.9rem;
+    line-height: 1.35;
 }
 
 .status-icon-row {
