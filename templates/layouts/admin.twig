@@ -272,6 +272,7 @@
             } catch (e) {}
             syncThemeUi(next);
             document.documentElement.dispatchEvent(new CustomEvent('admin-theme-change', {
+                bubbles: true,
                 detail: { theme: next }
             }));
         }
