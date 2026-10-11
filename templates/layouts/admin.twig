@@ -11,6 +11,12 @@
             if (theme === 'dark' || theme === 'light') {
                 document.documentElement.setAttribute('data-bs-theme', theme);
             }
+            // Cache-Buster vom Theme-Reload aus der URL entfernen
+            var url = new URL(window.location.href);
+            if (url.searchParams.has('_theme')) {
+                url.searchParams.delete('_theme');
+                window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+            }
         } catch (e) {}
     })();
     </script>
@@ -266,21 +272,25 @@
 
         function setTheme(theme) {
             var next = theme === 'dark' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-bs-theme', next);
             try {
                 localStorage.setItem(themeKey, next);
             } catch (e) {}
-            syncThemeUi(next);
 
-            // TinyMCE-Skin greift nur beim Init → Seite neu laden
-            if (typeof tinymce !== 'undefined') {
-                tinymce.editors.forEach(function (editor) {
-                    try {
-                        editor.save();
-                    } catch (e) {}
-                });
-            }
-            window.location.reload();
+            // Editor-Inhalt sichern (darf Reload nicht blockieren)
+            try {
+                if (typeof tinymce !== 'undefined' && tinymce.editors) {
+                    for (var i = 0; i < tinymce.editors.length; i++) {
+                        try {
+                            tinymce.editors[i].save();
+                        } catch (err) {}
+                    }
+                }
+            } catch (e) {}
+
+            // Hard Reload: Cache umgehen, TinyMCE-Skin neu initialisieren
+            var url = new URL(window.location.href);
+            url.searchParams.set('_theme', next);
+            window.location.replace(url.toString());
         }
 
         if (collapseBtn) {
