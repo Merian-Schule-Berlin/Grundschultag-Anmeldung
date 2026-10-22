@@ -53,7 +53,7 @@
                     <a class="settings-overview-card" href="/administrator/einstellungen?tab=indexierung">
                         <i class="bi bi-search" aria-hidden="true"></i>
                         <span class="settings-overview-title">Indexierung</span>
-                        <span class="settings-overview-text">Meta-Beschreibung, Google &amp; Sitemap</span>
+                        <span class="settings-overview-text">Google, KI, Schlagwörter &amp; Sitemap</span>
                     </a>
                     <a class="settings-overview-card" href="/administrator/einstellungen?tab=bot-schutz">
                         <i class="bi bi-shield-lock" aria-hidden="true"></i>
@@ -77,11 +77,13 @@
             <div class="settings-panel{% if tab == 'indexierung' %} is-active{% endif %}" data-panel="indexierung">
                 <h2 class="settings-panel-title">
                     Indexierung
-                    {% include 'partials/settings_info.twig' with { text: 'Steuert Suchmaschinen-Erfassung, Meta-Beschreibung und Sitemap der öffentlichen Seiten.' } %}
+                    {% include 'partials/settings_info.twig' with { text: 'Steuert Suchmaschinen- und KI-Erfassung: Meta-Daten, Sitemap, robots.txt und llms.txt der öffentlichen Seiten.' } %}
                 </h2>
 
                 {% set indexing_on = settings.google_indexing|default('0') == '1' %}
                 {% set meta_desc = settings.meta_description|default('') %}
+                {% set meta_kw = settings.meta_keywords|default('') %}
+                {% set index_summary = settings.indexing_summary|default('') %}
                 <form method="post" action="/administrator/einstellungen/indexierung" data-autosave>
                     {{ csrf.field()|raw }}
                     <div class="settings-block">
@@ -89,8 +91,8 @@
                             <div class="settings-option-head">
                                 <div class="settings-option-copy">
                                     <span class="settings-option-title">
-                                        Google-Indexierung
-                                        {% include 'partials/settings_info.twig' with { text: 'Erlaubt Suchmaschinen, die öffentlichen Seiten zu indexieren. Aus = noindex und robots.txt sperrt die Seite; Admin-Bereich bleibt ausgeschlossen. Bei aktivierter Indexierung wird eine Sitemap unter /sitemap.xml bereitgestellt.' } %}
+                                        Suchmaschinen- &amp; KI-Indexierung
+                                        {% include 'partials/settings_info.twig' with { text: 'Erlaubt Google und KI-Crawlern die öffentlichen Seiten. Aus = noindex und robots.txt sperrt alles; Admin, Danke- und Storno-Seiten bleiben ausgeschlossen. Aktiv: Sitemap unter /sitemap.xml und KI-Text unter /llms.txt.' } %}
                                     </span>
                                 </div>
                                 <div class="form-check form-switch m-0 d-flex align-items-center gap-2" data-autosave-status>
@@ -104,11 +106,11 @@
                     <div class="settings-block mt-3">
                         <div class="settings-block-heading">
                             <h3 class="settings-block-title mb-0">
-                                Metadaten
-                                {% include 'partials/settings_info.twig' with { text: 'Titel kommt aus dem Seitentitel unter Darstellung. Die Meta-Beschreibung erscheint in Suchergebnissen und Social-Previews.' } %}
+                                Metadaten für Suchergebnisse
+                                {% include 'partials/settings_info.twig' with { text: 'Titel kommt aus dem Seitentitel unter Darstellung. Beschreibung und Schlagwörter steuern, wofür die Seite in Suchergebnissen gefunden wird.' } %}
                             </h3>
                         </div>
-                        <div class="mb-0">
+                        <div class="mb-3">
                             <label class="form-label" for="meta_description">
                                 Meta-Beschreibung
                                 {% include 'partials/settings_info.twig' with { text: 'Kurzer Text für Google & Co. (empfohlen 120–160 Zeichen, max. 300). Ohne Eintrag wird der Untertitel genutzt, falls vorhanden.' } %}
@@ -117,6 +119,40 @@
                                       placeholder="z. B. Anmeldung zum Grundschultag der Merian-Schule Berlin – Fachbereiche wählen und verbindlich anmelden.">{{ meta_desc }}</textarea>
                             <p class="form-text mb-0" id="meta_description_counter" aria-live="polite"></p>
                         </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="meta_keywords">
+                                Schlagwörter / Suchbegriffe
+                                {% include 'partials/settings_info.twig' with { text: 'Kommagetrennte Begriffe, zu denen die Seite gefunden werden soll – z. B. Schulname, Stadtteil, „Grundschultag Anmeldung“. Werden in Meta-Keywords und Structured Data übernommen (max. 500 Zeichen).' } %}
+                            </label>
+                            <textarea class="form-control" name="meta_keywords" id="meta_keywords" rows="2" maxlength="500"
+                                      placeholder="z. B. Merian-Schule, Grundschultag Berlin, Anmeldung Grundschultag, Fachbereichswahl">{{ meta_kw }}</textarea>
+                            <p class="form-text mb-0" id="meta_keywords_counter" aria-live="polite"></p>
+                        </div>
+                    </div>
+
+                    <div class="settings-block mt-3">
+                        <div class="settings-block-heading">
+                            <h3 class="settings-block-title mb-0">
+                                Seiteninfo für KI &amp; Suchmaschinen
+                                {% include 'partials/settings_info.twig' with { text: 'Korrekte Fakten in Klartext. Erscheinen in der strukturierten Datenmarkierung und in /llms.txt, damit Chatbots und Antwort-Engines keine falschen Angaben zur Anmeldung erfinden.' } %}
+                            </h3>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label" for="indexing_summary">
+                                Was soll über diese Seite bekannt sein?
+                                {% include 'partials/settings_info.twig' with { text: 'Schule, Ort, was die Seite ist (und was nicht), Anmeldeweg, ggf. typische Fragen. Max. 2000 Zeichen. Je konkreter, desto besser für Google und KI.' } %}
+                            </label>
+                            <textarea class="form-control" name="indexing_summary" id="indexing_summary" rows="6" maxlength="2000"
+                                      placeholder="z. B. Offizielle Anmeldeseite der Merian-Schule (Berlin) für den Grundschultag. Eltern melden hier Kinder für Fachbereiche an. Es handelt sich nicht um die allgemeine Schulhomepage und nicht um eine Warteliste für die Einschulung. Aktuelle Termine und Fristen stehen auf der Startseite.">{{ index_summary }}</textarea>
+                            <p class="form-text mb-0" id="indexing_summary_counter" aria-live="polite"></p>
+                        </div>
+                        {% if indexing_on %}
+                        <p class="form-text mt-2 mb-0">
+                            Öffentlich: <a href="/sitemap.xml" target="_blank" rel="noopener">/sitemap.xml</a>
+                            · <a href="/robots.txt" target="_blank" rel="noopener">/robots.txt</a>
+                            · <a href="/llms.txt" target="_blank" rel="noopener">/llms.txt</a>
+                        </p>
+                        {% endif %}
                     </div>
 
                     <div class="mt-3">
@@ -824,18 +860,22 @@
     bindOptionSwitch('public_theme_toggle');
     bindOptionSwitch('google_indexing');
 
-    var metaDesc = document.getElementById('meta_description');
-    var metaCounter = document.getElementById('meta_description_counter');
-    function syncMetaCounter() {
-        if (!metaDesc || !metaCounter) return;
-        var max = 300;
-        var left = max - (metaDesc.value || '').length;
-        metaCounter.textContent = left + ' Zeichen übrig von ' + max + ' Zeichen';
+    function bindCharCounter(inputId, counterId, max) {
+        var input = document.getElementById(inputId);
+        var counter = document.getElementById(counterId);
+        function sync() {
+            if (!input || !counter) return;
+            var left = max - (input.value || '').length;
+            counter.textContent = left + ' Zeichen übrig von ' + max + ' Zeichen';
+        }
+        if (input) {
+            input.addEventListener('input', sync);
+            sync();
+        }
     }
-    if (metaDesc) {
-        metaDesc.addEventListener('input', syncMetaCounter);
-        syncMetaCounter();
-    }
+    bindCharCounter('meta_description', 'meta_description_counter', 300);
+    bindCharCounter('meta_keywords', 'meta_keywords_counter', 500);
+    bindCharCounter('indexing_summary', 'indexing_summary_counter', 2000);
 
     var botRadios = document.querySelectorAll('input[name="bot_protection_provider"]');
     var botKeys = document.getElementById('bot-keys-block');

@@ -88,6 +88,8 @@ final class InstallerService
             'public_theme_toggle' => '0',
             'google_indexing' => '0',
             'meta_description' => '',
+            'meta_keywords' => '',
+            'indexing_summary' => '',
             'bot_protection_provider' => SettingsService::BOT_OFF,
             'bot_protection_site_key' => '',
             'bot_protection_secret_key' => '',

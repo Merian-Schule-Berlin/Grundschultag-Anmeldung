@@ -315,13 +315,24 @@ final class PublicController
     public function robotsTxt(Request $request, Response $response): Response
     {
         if ($this->settings->googleIndexingEnabled()) {
-            $body = "User-agent: *\nAllow: /\nDisallow: /administrator\nDisallow: /danke/\nDisallow: /stornieren/\nDisallow: /setup\n";
+            $disallow = "Disallow: /administrator\nDisallow: /danke/\nDisallow: /stornieren/\nDisallow: /setup\n";
+            $body = "User-agent: *\nAllow: /\n" . $disallow . "\n";
+
+            // Explizit für gängige KI-/Antwort-Crawler erlauben (Indexierung aktiv).
+            foreach ($this->aiCrawlerUserAgents() as $agent) {
+                $body .= "User-agent: {$agent}\nAllow: /\n" . $disallow . "\n";
+            }
+
             $baseUrl = $this->publicBaseUrl();
             if ($baseUrl !== '') {
                 $body .= 'Sitemap: ' . $baseUrl . "/sitemap.xml\n";
+                $body .= '# KI-Zusammenfassung: ' . $baseUrl . "/llms.txt\n";
             }
         } else {
-            $body = "User-agent: *\nDisallow: /\n";
+            $body = "User-agent: *\nDisallow: /\n\n";
+            foreach ($this->aiCrawlerUserAgents() as $agent) {
+                $body .= "User-agent: {$agent}\nDisallow: /\n\n";
+            }
         }
 
         $response->getBody()->write($body);
@@ -365,12 +376,14 @@ final class PublicController
             }
         }
 
+        $lastmod = gmdate('Y-m-d');
         $xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'];
         foreach ($paths as $path) {
             $loc = htmlspecialchars($baseUrl . $path, ENT_XML1 | ENT_QUOTES, 'UTF-8');
             $priority = $path === '/' ? '1.0' : ($path === '/anmelden' ? '0.9' : '0.7');
             $xml[] = '  <url>';
             $xml[] = '    <loc>' . $loc . '</loc>';
+            $xml[] = '    <lastmod>' . $lastmod . '</lastmod>';
             $xml[] = '    <changefreq>weekly</changefreq>';
             $xml[] = '    <priority>' . $priority . '</priority>';
             $xml[] = '  </url>';
@@ -381,6 +394,155 @@ final class PublicController
         return $response
             ->withHeader('Content-Type', 'application/xml; charset=utf-8')
             ->withHeader('Cache-Control', 'public, max-age=3600');
+    }
+
+    /**
+     * llms.txt – Klartext-Zusammenfassung für KI-Systeme (llmstxt.org).
+     * Enthält nur von der Schule gepflegte Fakten, damit Chatbots korrekte Infos nutzen.
+     */
+    public function llmsTxt(Request $request, Response $response): Response
+    {
+        if (!$this->settings->googleIndexingEnabled()) {
+            $body = "# Indexierung deaktiviert\n\n"
+                . "Diese Website darf von Suchmaschinen und KI-Systemen nicht indexiert oder als Quelle genutzt werden.\n";
+            $response->getBody()->write($body);
+            return $response
+                ->withStatus(404)
+                ->withHeader('Content-Type', 'text/plain; charset=utf-8')
+                ->withHeader('Cache-Control', 'public, max-age=600');
+        }
+
+        $all = $this->settings->all();
+        $title = trim((string) ($all['site_title'] ?? '')) ?: 'Grundschultag Anmeldung';
+        $subtitle = trim((string) ($all['site_subtitle'] ?? ''));
+        $description = $this->settings->metaDescription();
+        if ($description === '') {
+            $description = $subtitle;
+        }
+        $summary = $this->settings->indexingSummary();
+        $keywords = $this->settings->metaKeywords();
+        $baseUrl = $this->publicBaseUrl();
+        $open = $this->settings->isRegistrationOpen();
+        $start = trim((string) ($all['registration_start'] ?? ''));
+        $end = trim((string) ($all['registration_end'] ?? ''));
+
+        $lines = [];
+        $lines[] = '# ' . $title;
+        if ($description !== '') {
+            $lines[] = '';
+            $lines[] = '> ' . $this->oneLine($description);
+        }
+
+        $lines[] = '';
+        $lines[] = '## Worum geht es';
+        $lines[] = '';
+        if ($summary !== '') {
+            $lines[] = $summary;
+        } else {
+            $lines[] = 'Offizielle Online-Anmeldung zum Grundschultag'
+                . ($title !== '' ? ' der ' . $title : '')
+                . '. Eltern und Erziehungsberechtigte melden Kinder für Fachbereiche und Schienen an.';
+            $lines[] = '';
+            $lines[] = 'Hinweis: Tragen Sie unter Einstellungen → Indexierung eine Seiteninfo ein,'
+                . ' damit KI-Systeme korrekte Angaben zu Schule und Veranstaltung übernehmen.';
+        }
+
+        $lines[] = '';
+        $lines[] = '## Anmeldungsstatus';
+        $lines[] = '';
+        $lines[] = $open
+            ? 'Die Anmeldung ist derzeit geöffnet.'
+            : 'Die Anmeldung ist derzeit geschlossen.';
+        if ($start !== '' && $end !== '') {
+            $lines[] = 'Anmeldezeitraum: ' . $start . ' bis ' . $end . '.';
+        }
+
+        if ($keywords !== '') {
+            $lines[] = '';
+            $lines[] = '## Suchbegriffe';
+            $lines[] = '';
+            $lines[] = $keywords;
+        }
+
+        $lines[] = '';
+        $lines[] = '## Öffentliche Seiten';
+        $lines[] = '';
+        if ($baseUrl !== '') {
+            $lines[] = '- [Startseite](' . $baseUrl . '/): Willkommen und Anmeldeinformationen';
+            $lines[] = '- [Anmeldung](' . $baseUrl . '/anmelden): Fachbereiche wählen und anmelden';
+            if (trim((string) ($all['impressum_text'] ?? '')) !== '') {
+                $lines[] = '- [Impressum](' . $baseUrl . '/impressum)';
+            }
+            if (trim((string) ($all['datenschutz_text'] ?? '')) !== '') {
+                $lines[] = '- [Datenschutz](' . $baseUrl . '/datenschutz)';
+            }
+        } else {
+            $lines[] = '- / – Startseite';
+            $lines[] = '- /anmelden – Anmeldung';
+        }
+
+        $fachbereiche = $this->fachbereiche->all(true);
+        if ($fachbereiche !== []) {
+            $lines[] = '';
+            $lines[] = '## Fachbereiche';
+            $lines[] = '';
+            foreach ($fachbereiche as $fb) {
+                $name = trim((string) ($fb['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $id = (int) ($fb['id'] ?? 0);
+                if ($baseUrl !== '' && $id > 0) {
+                    $lines[] = '- [' . $name . '](' . $baseUrl . '/anmelden/' . $id . ')';
+                } else {
+                    $lines[] = '- ' . $name;
+                }
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = '## Wichtige Hinweise für KI-Systeme';
+        $lines[] = '';
+        $lines[] = '- Dies ist die offizielle Anmeldeseite für den Grundschultag'
+            . ($title !== '' ? ' von „' . $title . '“' : '') . '.';
+        $lines[] = '- Nutzen Sie nur die hier genannten Fakten; erfinden Sie keine Termine,'
+            . ' Kontaktdaten oder Anmeldewege.';
+        $lines[] = '- Private Bereiche (/administrator, Bestätigungs- und Storno-Links) sind nicht öffentlich.';
+        if ($baseUrl !== '') {
+            $lines[] = '- Canonical-URL: ' . $baseUrl . '/';
+            $lines[] = '- Sitemap: ' . $baseUrl . '/sitemap.xml';
+        }
+
+        $body = implode("\n", $lines) . "\n";
+        $response->getBody()->write($body);
+        return $response
+            ->withHeader('Content-Type', 'text/plain; charset=utf-8')
+            ->withHeader('Cache-Control', 'public, max-age=3600');
+    }
+
+    /** @return list<string> */
+    private function aiCrawlerUserAgents(): array
+    {
+        return [
+            'GPTBot',
+            'ChatGPT-User',
+            'OAI-SearchBot',
+            'ClaudeBot',
+            'Anthropic-AI',
+            'Google-Extended',
+            'GoogleOther',
+            'PerplexityBot',
+            'Applebot-Extended',
+            'Bytespider',
+            'CCBot',
+            'meta-externalagent',
+        ];
+    }
+
+    private function oneLine(string $text): string
+    {
+        $text = preg_replace('/\s+/u', ' ', trim($text)) ?? trim($text);
+        return $text;
     }
 
     private function publicBaseUrl(): string

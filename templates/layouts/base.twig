@@ -6,14 +6,22 @@
     {% set page_title %}{% block title %}{{ app_name }}{% if site_subtitle %} · {{ site_subtitle }}{% endif %}{% endblock %}{% endset %}
     {% set page_description %}{% block meta_description %}{{ meta_description|default(site_subtitle, true) }}{% endblock %}{% endset %}
     {% set page_description = page_description|striptags|trim %}
-    <meta name="robots" content="{% block robots %}{% if google_indexing %}index, follow{% else %}noindex, nofollow{% endif %}{% endblock %}">
+    {% set page_keywords = meta_keywords|default('')|striptags|trim %}
+    {% set page_summary = indexing_summary|default('')|striptags|trim %}
+    <meta name="robots" content="{% block robots %}{% if google_indexing %}index, follow, max-snippet:-1, max-image-preview:large{% else %}noindex, nofollow{% endif %}{% endblock %}">
     <title>{{ page_title|striptags|trim }}</title>
     {% if page_description %}
     <meta name="description" content="{{ page_description|e('html_attr') }}">
     {% endif %}
+    {% if page_keywords and google_indexing %}
+    <meta name="keywords" content="{{ page_keywords|e('html_attr') }}">
+    {% endif %}
     {% if app_url %}
     <link rel="canonical" href="{{ app_url }}{{ request_path|default('/') }}">
     <meta property="og:url" content="{{ app_url }}{{ request_path|default('/') }}">
+    {% endif %}
+    {% if google_indexing %}
+    <link rel="alternate" type="text/plain" title="LLMs.txt" href="{{ app_url|default('') }}/llms.txt">
     {% endif %}
     <meta property="og:type" content="website">
     <meta property="og:locale" content="de_DE">
@@ -29,6 +37,42 @@
     <meta name="twitter:title" content="{{ page_title|striptags|trim|e('html_attr') }}">
     {% if page_description %}
     <meta name="twitter:description" content="{{ page_description|e('html_attr') }}">
+    {% endif %}
+    {% if google_indexing %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebSite",
+                "@id": {{ (app_url ~ '/#website')|json_encode|raw }},
+                "name": {{ app_name|json_encode|raw }},
+                "url": {{ ((app_url|default('')) ~ '/')|json_encode|raw }},
+                "description": {{ (page_summary ?: page_description)|json_encode|raw }},
+                "inLanguage": "de-DE"{% if page_keywords %},
+                "keywords": {{ page_keywords|json_encode|raw }}{% endif %}
+            },
+            {
+                "@type": "Organization",
+                "@id": {{ (app_url ~ '/#organization')|json_encode|raw }},
+                "name": {{ app_name|json_encode|raw }},
+                "url": {{ ((app_url|default('')) ~ '/')|json_encode|raw }}{% if site_logo and app_url %},
+                "logo": {{ (app_url ~ '/uploads/' ~ site_logo)|json_encode|raw }}{% endif %}
+            },
+            {
+                "@type": "WebPage",
+                "@id": {{ ((app_url|default('')) ~ request_path|default('/') ~ '#webpage')|json_encode|raw }},
+                "url": {{ ((app_url|default('')) ~ request_path|default('/'))|json_encode|raw }},
+                "name": {{ page_title|striptags|trim|json_encode|raw }},
+                "description": {{ (page_summary ?: page_description)|json_encode|raw }},
+                "isPartOf": { "@id": {{ (app_url ~ '/#website')|json_encode|raw }} },
+                "about": { "@id": {{ (app_url ~ '/#organization')|json_encode|raw }} },
+                "inLanguage": "de-DE"{% if page_keywords %},
+                "keywords": {{ page_keywords|json_encode|raw }}{% endif %}
+            }
+        ]
+    }
+    </script>
     {% endif %}
     {% if public_theme_toggle %}
     <script>

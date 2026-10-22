@@ -194,6 +194,20 @@ final class SettingsService
         return trim($this->get('meta_description'));
     }
 
+    public function metaKeywords(): string
+    {
+        return trim($this->get('meta_keywords'));
+    }
+
+    /**
+     * Freitext mit korrekten Fakten zur Seite (Schule, Veranstaltung, Zweck)
+     * für Suchmaschinen-Snippets und KI-Crawler (llms.txt / Structured Data).
+     */
+    public function indexingSummary(): string
+    {
+        return trim($this->get('indexing_summary'));
+    }
+
     public function botProtectionProvider(): string
     {
         $value = trim($this->get('bot_protection_provider', self::BOT_OFF));

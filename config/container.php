@@ -79,6 +79,8 @@ return [
         $publicThemeToggle = false;
         $googleIndexing = false;
         $metaDescription = '';
+        $metaKeywords = '';
+        $indexingSummary = '';
         $appUrl = rtrim((string) ($c->get('settings')['app_url'] ?? ''), '/');
         $requestPath = '/';
         $rawUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
@@ -112,6 +114,8 @@ return [
                 $publicThemeToggle = $settingsService->publicThemeToggleEnabled();
                 $googleIndexing = $settingsService->googleIndexingEnabled();
                 $metaDescription = $settingsService->metaDescription();
+                $metaKeywords = $settingsService->metaKeywords();
+                $indexingSummary = $settingsService->indexingSummary();
             }
         } catch (Throwable) {
             $siteLogo = '';
@@ -125,6 +129,8 @@ return [
             $publicThemeToggle = false;
             $googleIndexing = false;
             $metaDescription = '';
+            $metaKeywords = '';
+            $indexingSummary = '';
         }
         $assetVersion = '1';
         $versionFile = $c->get('root_path') . '/VERSION';
@@ -147,6 +153,8 @@ return [
         $twig->getEnvironment()->addGlobal('public_theme_toggle', $publicThemeToggle);
         $twig->getEnvironment()->addGlobal('google_indexing', $googleIndexing);
         $twig->getEnvironment()->addGlobal('meta_description', $metaDescription);
+        $twig->getEnvironment()->addGlobal('meta_keywords', $metaKeywords);
+        $twig->getEnvironment()->addGlobal('indexing_summary', $indexingSummary);
         $twig->getEnvironment()->addGlobal('app_url', $appUrl);
         $twig->getEnvironment()->addGlobal('request_path', $requestPath);
         $twig->getEnvironment()->addGlobal(
@@ -162,6 +170,14 @@ return [
         $twig->getEnvironment()->addFilter(new TwigFilter(
             'rich',
             static fn (?string $value): string => $htmlContent->toSafeHtml((string) ($value ?? '')),
+            ['is_safe' => ['html']]
+        ));
+        $twig->getEnvironment()->addFilter(new TwigFilter(
+            'json_encode',
+            static fn (mixed $value): string => (string) json_encode(
+                $value,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_THROW_ON_ERROR
+            ),
             ['is_safe' => ['html']]
         ));
 

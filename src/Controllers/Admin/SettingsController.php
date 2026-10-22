@@ -211,8 +211,19 @@ final class SettingsController
         $ajax = $this->isAjax($request);
         $enabled = !empty($data['google_indexing']);
         $metaDescription = trim((string) ($data['meta_description'] ?? ''));
+        $metaKeywords = trim((string) ($data['meta_keywords'] ?? ''));
+        $indexingSummary = trim((string) ($data['indexing_summary'] ?? ''));
+
+        $error = null;
         if (mb_strlen($metaDescription) > 300) {
             $error = 'Die Meta-Beschreibung darf höchstens 300 Zeichen lang sein.';
+        } elseif (mb_strlen($metaKeywords) > 500) {
+            $error = 'Die Schlagwörter dürfen höchstens 500 Zeichen lang sein.';
+        } elseif (mb_strlen($indexingSummary) > 2000) {
+            $error = 'Die Seiteninfo darf höchstens 2000 Zeichen lang sein.';
+        }
+
+        if ($error !== null) {
             if ($ajax) {
                 return $this->json($response->withStatus(400), ['ok' => false, 'error' => $error]);
             }
@@ -225,13 +236,17 @@ final class SettingsController
         $this->settings->setMany([
             'google_indexing' => $enabled ? '1' : '0',
             'meta_description' => $metaDescription,
+            'meta_keywords' => $metaKeywords,
+            'indexing_summary' => $indexingSummary,
         ]);
         $this->view->getEnvironment()->addGlobal('google_indexing', $enabled);
         $this->view->getEnvironment()->addGlobal('meta_description', $metaDescription);
+        $this->view->getEnvironment()->addGlobal('meta_keywords', $metaKeywords);
+        $this->view->getEnvironment()->addGlobal('indexing_summary', $indexingSummary);
 
         $message = $enabled
-            ? 'Indexierung gespeichert. Suchmaschinen dürfen die öffentlichen Seiten erfassen.'
-            : 'Indexierung gespeichert. Suchmaschinen werden angewiesen, die Seite nicht zu indexieren.';
+            ? 'Indexierung gespeichert. Suchmaschinen und KI-Crawler dürfen die öffentlichen Seiten erfassen.'
+            : 'Indexierung gespeichert. Suchmaschinen und KI-Crawler werden angewiesen, die Seite nicht zu indexieren.';
 
         if ($ajax) {
             return $this->json($response, ['ok' => true, 'message' => $message]);
